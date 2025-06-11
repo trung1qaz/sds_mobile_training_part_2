@@ -3,9 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'home_screen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sds_mobile_training_p2/data/user.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-
+import 'package:dio/dio.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,17 +23,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void login() async {
     if (_formKey.currentState!.validate()) {
-      final url = Uri.parse("https://training-api-unrp.onrender.com/login2");
-      final headers = {"Content-Type": "application/json"};
+      final dio = Dio();
+      final url = ("https://training-api-unrp.onrender.com/login2");
+      // final headers = {"Content-Type": "application/json"};
       final body = jsonEncode({
         "tax_code": int.tryParse(taxCtrl.text),
         "user_name": userCtrl.text.trim(),
         "password": passCtrl.text.trim(),
       });
-
       try {
-        final response = await http.post(url, headers: headers, body: body);
-        final data = jsonDecode(response.body);
+        final response = await dio.post(url, data: body);
+        final data = response.data;
 
         if (response.statusCode == 200 && data["success"] == true) {
           final token = data["data"]["token"];
@@ -50,8 +49,13 @@ class _LoginScreenState extends State<LoginScreen> {
           userList.removeWhere((u) =>
           u.taxCtrl == newUser.taxCtrl && u.userCtrl == newUser.userCtrl);
           userList.add(newUser);
+
           box.put('userList', userList);
-          box.put('token', token);
+          box.put('authToken', token);
+          box.put('currentUser', {
+            'tax_code': int.parse(taxCtrl.text),
+            'user_name': userCtrl.text,
+          });
 
           Navigator.pushReplacementNamed(context, '/home');
         } else {
@@ -63,8 +67,8 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Lỗi Timeout"),
+          SnackBar(
+            content: Text("Lỗi kết nối: ${e.toString()}"),
           ),
         );
       }
@@ -74,7 +78,6 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
-
 
   void showRecentLoginsDialog() {
     final box = Hive.box('authBox');
@@ -127,9 +130,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-
-
-
   @override
   void dispose() {
     taxCtrl.dispose();
@@ -175,10 +175,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   }
                   return null;
                 },
-                ),
-                CustomInputField(
-                  label: "Mật khẩu",
-                  controller: passCtrl,
+              ),
+              CustomInputField(
+                label: "Mật khẩu",
+                controller: passCtrl,
                 hintText: 'Điền mật khẩu',
                 isPassword: true,
                 validator: (value) {
