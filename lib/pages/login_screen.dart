@@ -62,14 +62,14 @@ class _LoginScreenState extends State<LoginScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("\u0110\u0103ng nh\u1eadp th\u1ea5t b\u1ea1i, sai t\u00ean \u0111\u0103ng nh\u1eadp ho\u1eb7c m\u1eadt kh\u1ea9u"),
+              content: Text("Đăng nhập thất bại, sai tên đăng nhập hoặc mật khẩu"),
             ),
           );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("L\u1ed7i k\u1ebft n\u1ed1i: ${e.toString()}"),
+            content: Text("Lỗi kết nối: ${e.toString()}"),
           ),
         );
       }
