@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sds_mobile_training_p2/data/user.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:dio/dio.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,17 +24,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void login() async {
     if (_formKey.currentState!.validate()) {
-      final url = Uri.parse("https://training-api-unrp.onrender.com/login2");
-      final headers = {"Content-Type": "application/json"};
+      final dio = Dio();
+      final url = ("https://training-api-unrp.onrender.com/login2");
+      // final headers = {"Content-Type": "application/json"};
       final body = jsonEncode({
         "tax_code": int.tryParse(taxCtrl.text),
         "user_name": userCtrl.text.trim(),
         "password": passCtrl.text.trim(),
       });
-
       try {
-        final response = await http.post(url, headers: headers, body: body);
-        final data = jsonDecode(response.body);
+        final response = await dio.post(url, data: body);
+        final data = response.data;
 
         if (response.statusCode == 200 && data["success"] == true) {
           final token = data["data"]["token"];
@@ -61,14 +62,14 @@ class _LoginScreenState extends State<LoginScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("Đăng nhập thất bại, sai tên đăng nhập hoặc mật khẩu"),
+              content: Text("\u0110\u0103ng nh\u1eadp th\u1ea5t b\u1ea1i, sai t\u00ean \u0111\u0103ng nh\u1eadp ho\u1eb7c m\u1eadt kh\u1ea9u"),
             ),
           );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Lỗi kết nối: ${e.toString()}"),
+            content: Text("L\u1ed7i k\u1ebft n\u1ed1i: ${e.toString()}"),
           ),
         );
       }

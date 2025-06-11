@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../pages/home_screen.dart';
 
@@ -11,48 +11,48 @@ class ApiService {
     return box.get('authToken');
   }
 
-  static Map<String, String> getAuthHeaders() {
+  static Options getAuthOptions() {
     final token = getAuthToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': '$token',
-    };
+    return Options(
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': token,
+      },
+    );
   }
+
+  static final Dio dio = Dio(BaseOptions(baseUrl: baseUrl));
 }
 
 Future<List<Product>> fetchProductsFromApi() async {
   try {
-    final response = await http.get(
-      Uri.parse('${ApiService.baseUrl}/products?page=2&size=10'),
-      headers: ApiService.getAuthHeaders(),
+    final response = await ApiService.dio.get(
+      '/products?page=2&size=10',
+      options: ApiService.getAuthOptions(),
     );
 
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      final List<dynamic> productList = jsonData['data'];
-      return productList.map((item) => Product(
-        id: item['id'],
-        name: item['name'],
-        price: item['price'],
-        quantity: item['quantity'],
-        cover: item['cover'],
-      )).toList();
-    } else if (response.statusCode == 401) {
+    final List<dynamic> productList = response.data['data'];
+    return productList.map((item) => Product(
+      id: item['id'],
+      name: item['name'],
+      price: item['price'],
+      quantity: item['quantity'],
+      cover: item['cover'],
+    )).toList();
+  } on DioError catch (e) {
+    if (e.response?.statusCode == 401) {
       throw Exception('Unauthorized - Please login again');
-    } else {
-      throw Exception('Failed to load products: ${response.statusCode}');
     }
-  } catch (e) {
-    throw Exception('Network error: $e');
+    throw Exception('Failed to load products: ${e.message}');
   }
 }
 
 Future<Product> addProductToApi(Product product) async {
   try {
-    final response = await http.post(
-      Uri.parse('${ApiService.baseUrl}/products'),
-      headers: ApiService.getAuthHeaders(),
-      body: json.encode({
+    final response = await ApiService.dio.post(
+      '/products',
+      options: ApiService.getAuthOptions(),
+      data: json.encode({
         'name': product.name,
         'price': product.price,
         'quantity': product.quantity,
@@ -60,31 +60,28 @@ Future<Product> addProductToApi(Product product) async {
       }),
     );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final jsonData = json.decode(response.body);
-      return Product(
-        id: jsonData['data']['id'] ?? product.id,
-        name: jsonData['data']['name'] ?? product.name,
-        price: jsonData['data']['price'] ?? product.price,
-        quantity: jsonData['data']['quantity'] ?? product.quantity,
-        cover: jsonData['data']['cover'] ?? product.cover,
-      );
-    } else if (response.statusCode == 401) {
+    final jsonData = response.data['data'];
+    return Product(
+      id: jsonData['id'] ?? product.id,
+      name: jsonData['name'] ?? product.name,
+      price: jsonData['price'] ?? product.price,
+      quantity: jsonData['quantity'] ?? product.quantity,
+      cover: jsonData['cover'] ?? product.cover,
+    );
+  } on DioError catch (e) {
+    if (e.response?.statusCode == 401) {
       throw Exception('Unauthorized - Please login again');
-    } else {
-      throw Exception('Failed to add product: ${response.statusCode}');
     }
-  } catch (e) {
-    throw Exception('Network error while adding product: $e');
+    throw Exception('Failed to add product: ${e.message}');
   }
 }
 
 Future<Product> updateProductInApi(Product product) async {
   try {
-    final response = await http.put(
-      Uri.parse('${ApiService.baseUrl}/products/${product.id}'),
-      headers: ApiService.getAuthHeaders(),
-      body: json.encode({
+    final response = await ApiService.dio.put(
+      '/products/${product.id}',
+      options: ApiService.getAuthOptions(),
+      data: json.encode({
         'name': product.name,
         'price': product.price,
         'quantity': product.quantity,
@@ -92,69 +89,57 @@ Future<Product> updateProductInApi(Product product) async {
       }),
     );
 
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      return Product(
-        id: jsonData['data']['id'] ?? product.id,
-        name: jsonData['data']['name'] ?? product.name,
-        price: jsonData['data']['price'] ?? product.price,
-        quantity: jsonData['data']['quantity'] ?? product.quantity,
-        cover: jsonData['data']['cover'] ?? product.cover,
-      );
-    } else if (response.statusCode == 401) {
+    final jsonData = response.data['data'];
+    return Product(
+      id: jsonData['id'] ?? product.id,
+      name: jsonData['name'] ?? product.name,
+      price: jsonData['price'] ?? product.price,
+      quantity: jsonData['quantity'] ?? product.quantity,
+      cover: jsonData['cover'] ?? product.cover,
+    );
+  } on DioError catch (e) {
+    if (e.response?.statusCode == 401) {
       throw Exception('Unauthorized - Please login again');
-    } else {
-      throw Exception('Failed to update product: ${response.statusCode}');
     }
-  } catch (e) {
-    throw Exception('Network error while updating product: $e');
+    throw Exception('Failed to update product: ${e.message}');
   }
 }
 
-// Delete product from API
 Future<bool> deleteProductFromApi(int productId) async {
   try {
-    final response = await http.delete(
-      Uri.parse('${ApiService.baseUrl}/products/$productId'),
-      headers: ApiService.getAuthHeaders(),
+    final response = await ApiService.dio.delete(
+      '/products/$productId',
+      options: ApiService.getAuthOptions(),
     );
 
-    if (response.statusCode == 200 || response.statusCode == 204) {
-      return true;
-    } else if (response.statusCode == 401) {
+    return response.statusCode == 200 || response.statusCode == 204;
+  } on DioError catch (e) {
+    if (e.response?.statusCode == 401) {
       throw Exception('Unauthorized - Please login again');
-    } else {
-      throw Exception('Failed to delete product: ${response.statusCode}');
     }
-  } catch (e) {
-    throw Exception('Network error while deleting product: $e');
+    throw Exception('Failed to delete product: ${e.message}');
   }
 }
 
-// Get single product details
 Future<Product> getProductDetails(int productId) async {
   try {
-    final response = await http.get(
-      Uri.parse('${ApiService.baseUrl}/products/$productId'),
-      headers: ApiService.getAuthHeaders(),
+    final response = await ApiService.dio.get(
+      '/products/$productId',
+      options: ApiService.getAuthOptions(),
     );
 
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      final item = jsonData['data'];
-      return Product(
-        id: item['id'],
-        name: item['name'],
-        price: item['price'],
-        quantity: item['quantity'],
-        cover: item['cover'],
-      );
-    } else if (response.statusCode == 401) {
+    final item = response.data['data'];
+    return Product(
+      id: item['id'],
+      name: item['name'],
+      price: item['price'],
+      quantity: item['quantity'],
+      cover: item['cover'],
+    );
+  } on DioError catch (e) {
+    if (e.response?.statusCode == 401) {
       throw Exception('Unauthorized - Please login again');
-    } else {
-      throw Exception('Failed to load product details: ${response.statusCode}');
     }
-  } catch (e) {
-    throw Exception('Network error: $e');
+    throw Exception('Failed to load product details: ${e.message}');
   }
 }

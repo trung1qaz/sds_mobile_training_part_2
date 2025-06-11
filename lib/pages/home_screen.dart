@@ -242,7 +242,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _logout() {
-    // Clear auth data
     final box = Hive.box('authBox');
     box.delete('authToken');
     box.delete('currentUser');
