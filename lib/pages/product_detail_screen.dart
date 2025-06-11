@@ -342,7 +342,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     children: [
                       Icon(Icons.inventory, color: Colors.blue),
                       Text(
-                        'Số lượng: ${currentProduct.quantity}',
+                        ' Số lượng: ${currentProduct.quantity}',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.blue,

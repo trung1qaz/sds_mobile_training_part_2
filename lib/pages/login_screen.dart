@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'home_screen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sds_mobile_training_p2/data/user.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:dio/dio.dart';
 

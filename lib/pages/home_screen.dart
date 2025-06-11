@@ -391,11 +391,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 },
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  tooltip: 'Xoá sản phẩm',
-                  onPressed: () => removeProduct(index),
-                ),
               ),
             );
           },
